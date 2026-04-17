@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&family=Pinyon+Script&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Outfit', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-script: 'Pinyon Script', cursive;
+}
+
+body {
+  background-color: #050505;
+  color: #ffffff;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+}
+
+/* Custom hide scrollbar for horizontal date list */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Modern Input */
+input.modern-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0;
+  color: white;
+  padding: 16px 0;
+  transition: all 0.3s ease;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+input.modern-input:focus {
+  outline: none;
+  border-bottom-color: #ffffff;
+}
+
+input.modern-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.clip-image {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
