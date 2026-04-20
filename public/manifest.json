@@ -8,7 +8,7 @@
   "theme_color": "#050505",
   "icons": [
     {
-      "src": "https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download",
+      "src": "/icon.png",
       "sizes": "192x192 512x512",
       "type": "image/png",
       "purpose": "any maskable"
