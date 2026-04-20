@@ -51,11 +51,16 @@ export default function App() {
   
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const upcomingDays = Array.from({ length: 14 }).map((_, i) => addDays(startOfToday(), i));
 
   useEffect(() => {
-    fetchBookings();
+    fetchBookings().finally(() => {
+      // Simulate a brief elegant loading delay for the initial load
+      setTimeout(() => setIsAppLoading(false), 1500);
+    });
   }, []);
 
   const fetchBookings = async () => {
@@ -104,7 +109,7 @@ export default function App() {
 
       if (res.ok) {
         fetchBookings();
-        setStep(4);
+        handleStepTransition(() => setStep(4));
       } else {
         const errorData = await res.json();
         alert(errorData.error || 'Hubo un problema al realizar la reserva.');
@@ -132,17 +137,70 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
 
+  const handleStepTransition = (nextStepAction: () => void) => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      nextStepAction();
+      setIsTransitioning(false);
+    }, 600); // 600ms elegant fade duration
+  };
+
   const resetFlow = () => {
-    setStep(1);
-    setSelectedService(null);
-    setSelectedTime(null);
-    setFormData({ name: '', email: '', phone: '' });
-    setSelectedDate(startOfToday());
+    handleStepTransition(() => {
+      setStep(1);
+      setSelectedService(null);
+      setSelectedTime(null);
+      setFormData({ name: '', email: '', phone: '' });
+      setSelectedDate(startOfToday());
+    });
   };
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black font-sans">
       
+      {/* Global Elegant Initial Loader */}
+      <AnimatePresence>
+        {isAppLoading && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1, ease: 'easeInOut' }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]"
+          >
+            <motion.img 
+              src="https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download" 
+              alt="Loading Andrea Nails Studio"
+              initial={{ opacity: 0.5, scale: 0.95 }}
+              animate={{ opacity: [0.5, 1, 0.5], scale: [0.95, 1, 0.95] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              className="w-48 lg:w-64 [filter:drop-shadow(0_0_20px_rgba(255,255,255,0.2))] mix-blend-screen brightness-115 contrast-110"
+              loading="eager"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Global Step Transition Loader */}
+      <AnimatePresence>
+        {isTransitioning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="fixed inset-0 z-40 bg-[#050505]/80 backdrop-blur-md flex items-center justify-center"
+          >
+            <motion.img 
+              src="https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download" 
+              alt="Loading"
+              animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              className="w-32 [filter:drop-shadow(0_0_20px_rgba(255,255,255,0.1))] mix-blend-screen brightness-115 contrast-110"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Left split screen - Sticky Hero Image */}
       <div className="w-full lg:w-1/2 h-[35vh] lg:h-screen relative flex flex-col justify-between p-6 lg:p-12 overflow-hidden shrink-0">
         <AnimatePresence mode="wait">
@@ -194,7 +252,7 @@ export default function App() {
         <div className="sticky top-0 z-20 bg-[#050505]/80 backdrop-blur-xl px-6 lg:px-16 lg:pt-16 py-6 flex items-center min-h-[80px]">
           {step > 1 && step < 4 && (
             <button 
-              onClick={() => setStep(step - 1)}
+              onClick={() => handleStepTransition(() => setStep(step - 1))}
               className="flex items-center gap-2 text-sm uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
             >
               <ArrowLeft size={16} /> Volver
@@ -224,10 +282,10 @@ export default function App() {
                   {SERVICES.map((service) => (
                     <button
                       key={service.id}
-                      onClick={() => {
+                      onClick={() => handleStepTransition(() => {
                         setSelectedService(service.id);
                         setStep(2);
-                      }}
+                      })}
                       className="group relative aspect-[3/4] overflow-hidden bg-[#050505] border border-white/10 hover:border-white/40 transition-all duration-500 clip-image text-left"
                     >
                       {/* High contrast, stark grayscale filters for true minimalist B&W moody aesthetic */}
@@ -388,14 +446,14 @@ export default function App() {
 
                 <div className="flex gap-4">
                   <button
-                    onClick={() => setStep(1)}
+                    onClick={() => handleStepTransition(() => setStep(1))}
                     className="w-1/3 py-6 border border-white/20 font-display text-sm uppercase tracking-widest hover:bg-white/5 transition-all"
                   >
                     Volver
                   </button>
                   <button
                     disabled={!selectedTime}
-                    onClick={() => setStep(3)}
+                    onClick={() => handleStepTransition(() => setStep(3))}
                     className="w-2/3 bg-white text-black py-6 font-display text-xl uppercase tracking-widest hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     Continuar
