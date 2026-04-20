@@ -17,7 +17,7 @@ import {
   startOfDay
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Facebook, Instagram } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Mock UI Services with high visual impact images
@@ -478,6 +478,22 @@ export default function App() {
             )}
 
           </AnimatePresence>
+        </div>
+
+        {/* Footer / Socials */}
+        <div className="mt-auto px-6 py-10 lg:px-16 lg:pb-12 flex flex-col items-center justify-center gap-6 opacity-60">
+          <div className="w-8 h-[1px] bg-white/20"></div>
+          <div className="flex items-center gap-6">
+            <a href="#" className="hover:text-white transition-colors duration-300 hover:scale-110 transform" aria-label="Instagram">
+              <Instagram size={20} strokeWidth={1.5} />
+            </a>
+            <a href="#" className="hover:text-white transition-colors duration-300 hover:scale-110 transform" aria-label="Facebook">
+              <Facebook size={20} strokeWidth={1.5} />
+            </a>
+          </div>
+          <p className="text-[10px] uppercase tracking-[0.2em] opacity-50">
+            © {new Date().getFullYear()} Andrea Nails Studio
+          </p>
         </div>
       </div>
     </div>
