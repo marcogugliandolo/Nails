@@ -1,0 +1,17 @@
+{
+  "name": "Andrea Nails Studio",
+  "short_name": "Andrea Nails",
+  "description": "Reserva tu cita para Manicura y Nail Art.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

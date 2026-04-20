@@ -22,7 +22,7 @@ async function startServer() {
   });
 
   app.post('/api/bookings', async (req, res) => {
-    const { name, email, date, time, service } = req.body;
+    const { name, email, date, time, service, paidInAdvance } = req.body;
     
     if (!name || !email || !date || !time || !service) {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
@@ -34,25 +34,70 @@ async function startServer() {
       return res.status(400).json({ error: 'La cita ya no está disponible' });
     }
 
-    const booking = { id: Date.now().toString(), name, email, date, time, service, status: 'confirmed' };
+    const booking = { 
+      id: Date.now().toString(), 
+      name, 
+      email, 
+      date, 
+      time, 
+      service, 
+      paidInAdvance: !!paidInAdvance, 
+      status: 'confirmed' 
+    };
     bookings.push(booking);
+
+    const paymentText = paidInAdvance 
+      ? '<p style="color: #666; font-size: 12px; line-height: 1.5; text-align: center; border-top: 1px solid #222; padding-top: 20px;">Has indicado que enviaste el pago adelantado por Bizum. Lo revisaremos pronto.</p>'
+      : '<p style="color: #666; font-size: 12px; line-height: 1.5; text-align: center; border-top: 1px solid #222; padding-top: 20px;">Recuerda abonar el importe el día de tu cita en el estudio.</p>';
 
     if (process.env.RESEND_API_KEY) {
       try {
         await resend.emails.send({
-          from: 'Citas Uñas <onboarding@resend.dev>', // In a real app verify your domain in Resend
+          from: 'Andrea Nails Studio <onboarding@resend.dev>', // Importante: Verifica tu dominio en Resend para usar un email personalizado
           to: email,
-          subject: 'Confirmación de tu reserva - Uñas',
-          html: `<div style="font-family: sans-serif; color: #333;">
-            <h2 style="color: #5A5A40;">¡Hola ${name}!</h2>
-            <p>Tu cita se ha confirmado correctamente.</p>
-            <ul>
-              <li><strong>Servicio:</strong> ${service}</li>
-              <li><strong>Fecha:</strong> ${date}</li>
-              <li><strong>Hora:</strong> ${time}</li>
-            </ul>
-            <p>¡Te esperamos!</p>
-          </div>`
+          subject: 'Confirmación de Reserva | Andrea Nails Studio',
+          html: `
+            <div style="font-family: 'Inter', system-ui, sans-serif; max-width: 600px; margin: 0 auto; background-color: #050505; color: #ffffff; padding: 40px; border-radius: 4px; border: 1px solid #222;">
+              
+              <div style="text-align: center; margin-bottom: 40px;">
+                <img src="https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download" alt="Andrea Nails Studio" style="width: 150px; height: auto;" />
+              </div>
+
+              <h1 style="color: #ffffff; font-size: 24px; font-weight: 300; letter-spacing: -0.5px; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #222; padding-bottom: 20px;">
+                Nos vemos pronto.
+              </h1>
+              
+              <p style="color: #a0a0a0; font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
+                Hola <strong>${name}</strong>,<br/>
+                Tu cita ha sido reservada y confirmada con éxito. Aquí tienes los detalles:
+              </p>
+
+              <div style="background-color: #0a0a0a; padding: 25px; border-left: 2px solid #ffffff; margin-bottom: 30px;">
+                <p style="margin: 0 0 15px 0;">
+                  <span style="display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin-bottom: 4px;">Servicio</span>
+                  <strong style="font-size: 18px; font-weight: 400; letter-spacing: -0.5px;">${service}</strong>
+                </p>
+                
+                <p style="margin: 0 0 15px 0;">
+                  <span style="display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin-bottom: 4px;">Fecha</span>
+                  <strong style="font-size: 16px; font-weight: 400;">${date}</strong>
+                </p>
+
+                <p style="margin: 0;">
+                  <span style="display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin-bottom: 4px;">Hora</span>
+                  <strong style="font-size: 16px; font-weight: 400;">${time}</strong>
+                </p>
+              </div>
+
+              ${paymentText}
+
+              <p style="color: #666; font-size: 12px; line-height: 1.5; text-align: center; border-top: 1px solid #222; padding-top: 20px;">
+                <span style="display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.5;">Ubicación</span>
+                Andrea Nails Studio<br/>
+                Si necesitas cancelar o modificar tu cita, por favor contáctanos con 24h de antelación.
+              </p>
+            </div>
+          `
         });
         console.log('Email enviado correctamente a', email);
       } catch (error) {

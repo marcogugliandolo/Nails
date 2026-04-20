@@ -17,7 +17,7 @@ import {
   startOfDay
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Facebook, Instagram } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Facebook, Instagram, Smartphone, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Mock UI Services with high visual impact images
@@ -48,6 +48,7 @@ export default function App() {
   const [currentMonth, setCurrentMonth] = useState<Date>(startOfToday());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [paymentMethod, setPaymentMethod] = useState<'studio' | 'bizum'>('studio');
   
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,7 +85,7 @@ export default function App() {
     return bookedForDay >= TIME_SLOTS.length;
   };
 
-  const handleBooking = async (e: React.FormEvent) => {
+  const handleBookingDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedService || !selectedDate || !selectedTime || !formData.name || !formData.email) return;
 
@@ -98,7 +99,8 @@ export default function App() {
         phone: formData.phone,
         date: format(selectedDate, 'yyyy-MM-dd'),
         time: selectedTime,
-        service: serviceName
+        service: serviceName,
+        paidInAdvance: paymentMethod === 'bizum'
       };
 
       const res = await fetch('/api/bookings', {
@@ -112,7 +114,7 @@ export default function App() {
         handleStepTransition(() => setStep(4));
       } else {
         const errorData = await res.json();
-        alert(errorData.error || 'Hubo un problema al realizar la reserva.');
+        alert(errorData.error || 'Hubo un problema al procesar la reserva.');
       }
     } catch (error) {
       console.error(error);
@@ -297,7 +299,7 @@ export default function App() {
                       <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
                       <div className="absolute bottom-0 left-0 p-5 w-full">
                         <h3 className="font-display text-xl lg:text-2xl uppercase tracking-tight mb-3">{service.name}</h3>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-2">
                           <span className="font-display text-lg lg:text-xl bg-white text-black px-2 py-1 leading-none">
                             {service.price}
                           </span>
@@ -305,6 +307,7 @@ export default function App() {
                             {service.duration}
                           </span>
                         </div>
+                        <span className="text-[9px] uppercase tracking-widest opacity-50 block">Requiere 10€ de señal</span>
                       </div>
                     </button>
                   ))}
@@ -490,7 +493,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <form id="booking-form" onSubmit={handleBooking} className="space-y-10">
+                <form id="booking-form" onSubmit={handleBookingDetailsSubmit} className="space-y-10">
                   <div className="relative">
                     <label className="text-[10px] uppercase tracking-[0.2em] text-white/50 block">Nombre Completo</label>
                     <input
@@ -527,12 +530,59 @@ export default function App() {
                     />
                   </div>
 
+                  <div className="relative">
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-white/50 block mb-3">Método de pago</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('studio')}
+                        className={`p-4 border text-left transition-all ${
+                          paymentMethod === 'studio' 
+                            ? 'border-white bg-white/5' 
+                            : 'border-white/10 hover:border-white/30 opacity-60'
+                        }`}
+                      >
+                        <span className="font-display block mb-1">Pagar en estudio</span>
+                        <span className="text-[10px] uppercase tracking-widest opacity-70">En efectivo o tarjeta</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('bizum')}
+                        className={`p-4 border text-left transition-all ${
+                          paymentMethod === 'bizum' 
+                            ? 'border-white bg-white/5' 
+                            : 'border-white/10 hover:border-white/30 opacity-60'
+                        }`}
+                      >
+                        <span className="font-display block mb-1">Pago adelantado Bizum</span>
+                        <span className="text-[10px] uppercase tracking-widest opacity-70">Abonar {currentServiceObj?.price} ahora</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {paymentMethod === 'bizum' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="border border-white/20 bg-[#0a0a0a] p-6 text-center mt-4">
+                          <span className="block text-[10px] uppercase tracking-[0.2em] opacity-60 mb-2">Envía un Bizum de {currentServiceObj?.price} a:</span>
+                          <span className="font-display text-2xl tracking-widest block text-white py-2 px-4 border border-white/10 inline-block mx-auto mb-4 bg-black/50">+34 600 000 000</span>
+                          <p className="text-xs opacity-50 font-mono">Concepto: {formData.name ? formData.name.split(' ')[0] : 'Reserva'}</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full mt-12 bg-white text-black py-6 font-display text-xl uppercase tracking-widest hover:bg-gray-200 hover:scale-[1.02] disabled:opacity-50 disabled:scale-100 transition-all flex justify-center items-center gap-3"
+                    className="w-full mt-12 bg-white text-black py-6 font-display text-xl uppercase tracking-widest hover:bg-gray-200 hover:scale-[1.02] transition-all flex justify-center items-center gap-3 disabled:opacity-50 disabled:scale-100"
                   >
-                    {isSubmitting ? 'Procesando...' : 'Confirmar Reserva'}
+                    {isSubmitting ? 'Procesando...' : paymentMethod === 'bizum' ? 'Enviar Bizum' : 'Confirmar Reserva'}
                   </button>
                 </form>
               </motion.div>
