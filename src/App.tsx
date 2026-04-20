@@ -119,7 +119,7 @@ export default function App() {
 
   // Determine imagery for left pane
   const currentServiceObj = SERVICES.find(s => s.id === selectedService);
-  const heroImage = currentServiceObj?.img || 'https://upload.wikimedia.org/wikipedia/commons/8/88/French_manicure_with_silver_nail_polish.jpg';
+  const heroImage = currentServiceObj?.img || SERVICES.find(s => s.id === 'nailart')?.img || '';
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
