@@ -161,7 +161,7 @@ export default function App() {
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent lg:bg-gradient-to-r lg:from-[#050505]/20 lg:to-[#050505]" />
         
-        <div className="relative z-10 flex justify-between items-start">
+        <div className="relative z-10 flex flex-col items-center justify-center w-full lg:flex-row lg:justify-between lg:items-start lg:w-auto">
           <div className="flex flex-col items-center justify-start p-2 select-none group">
             <img 
               src="https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download" 
@@ -171,7 +171,7 @@ export default function App() {
               referrerPolicy="no-referrer"
             />
           </div>
-          <span className="text-xs uppercase tracking-widest opacity-50 mt-4">Reserva</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] opacity-40 mt-6 hidden lg:block">Reserva</span>
         </div>
 
         <div className="relative z-10 hidden lg:block">
