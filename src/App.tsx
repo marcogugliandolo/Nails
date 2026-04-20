@@ -236,10 +236,17 @@ export default function App() {
                         referrerPolicy="no-referrer" 
                         className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-60 group-hover:opacity-100 transition-opacity duration-700 grayscale-[100%] saturate-0 contrast-125" 
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent opacity-90" />
-                      <div className="absolute bottom-0 left-0 p-5">
-                        <h3 className="font-display text-xl uppercase tracking-tight mb-1">{service.name}</h3>
-                        <p className="text-[10px] opacity-60 tracking-[0.2em] uppercase">{service.price} &bull; {service.duration}</p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
+                      <div className="absolute bottom-0 left-0 p-5 w-full">
+                        <h3 className="font-display text-xl lg:text-2xl uppercase tracking-tight mb-3">{service.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <span className="font-display text-lg lg:text-xl bg-white text-black px-2 py-1 leading-none">
+                            {service.price}
+                          </span>
+                          <span className="text-[10px] tracking-[0.2em] uppercase border border-white/20 px-2 py-1.5 leading-none opacity-80">
+                            {service.duration}
+                          </span>
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -256,6 +263,18 @@ export default function App() {
                 exit={{ opacity: 0, x: -20 }}
                 className="w-full max-w-xl mx-auto lg:mx-0"
               >
+                {currentServiceObj && (
+                  <div className="mb-10 p-4 border border-white/10 bg-white/5 flex justify-between items-center">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 block mb-1">Servicio Seleccionado</span>
+                      <h3 className="font-display text-xl uppercase">{currentServiceObj.name}</h3>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-display text-xl block">{currentServiceObj.price}</span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50">{currentServiceObj.duration}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="mb-10">
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="font-display text-2xl uppercase tracking-tighter">Fecha</h2>
@@ -394,11 +413,23 @@ export default function App() {
                 exit={{ opacity: 0, x: -20 }}
                 className="w-full max-w-xl mx-auto lg:mx-0"
               >
-                <div className="mb-12 border-l-2 border-white/40 pl-6 pb-2">
-                  <h3 className="font-display text-2xl uppercase mb-1">{currentServiceObj?.name}</h3>
-                  <p className="text-xs tracking-[0.2em] uppercase opacity-60">
-                    {format(selectedDate, 'dd MMM', { locale: es })} a las {selectedTime}
-                  </p>
+                <div className="mb-12 p-6 border border-white/10 bg-[#0a0a0a]">
+                  <div className="flex justify-between items-start mb-4 border-b border-white/10 pb-4">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 block mb-1">Servicio</span>
+                      <h3 className="font-display text-xl uppercase">{currentServiceObj?.name}</h3>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-display text-xl block">{currentServiceObj?.price}</span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50">{currentServiceObj?.duration}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 block mb-1">Fecha y Hora</span>
+                    <p className="font-display text-lg uppercase">
+                      {format(selectedDate, 'dd MMM yyyy', { locale: es })} — {selectedTime}
+                    </p>
+                  </div>
                 </div>
 
                 <form id="booking-form" onSubmit={handleBooking} className="space-y-10">
