@@ -19,6 +19,8 @@ import {
 import { es } from 'date-fns/locale';
 import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Facebook, Instagram, Smartphone, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AdminLogin } from './components/AdminLogin';
+import { AdminDashboard } from './components/AdminDashboard';
 
 // Mock UI Services with high visual impact images
 const SERVICES = [
@@ -42,6 +44,7 @@ interface Booking {
 }
 
 export default function App() {
+  const [view, setView] = useState<'booking' | 'adminLogin' | 'adminDashboard'>('booking');
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
@@ -157,6 +160,14 @@ export default function App() {
     });
   };
 
+  if (view === 'adminLogin') {
+    return <AdminLogin onLogin={() => setView('adminDashboard')} onBack={() => setView('booking')} />;
+  }
+
+  if (view === 'adminDashboard') {
+    return <AdminDashboard onLogout={() => setView('booking')} />;
+  }
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black font-sans">
       
@@ -170,8 +181,8 @@ export default function App() {
             className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]"
           >
             <motion.img 
-              src="https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download" 
-              alt="Loading Andrea Nails Studio"
+              src="/icon.png" 
+              alt="Loading Lumaira Nails Studio"
               initial={{ opacity: 0.5, scale: 0.95 }}
               animate={{ opacity: [0.5, 1, 0.5], scale: [0.95, 1, 0.95] }}
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
@@ -193,7 +204,7 @@ export default function App() {
             className="fixed inset-0 z-40 bg-[#050505]/80 backdrop-blur-md flex items-center justify-center"
           >
             <motion.img 
-              src="https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download" 
+              src="/icon.png" 
               alt="Loading"
               animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
               transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
@@ -222,11 +233,14 @@ export default function App() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent lg:bg-gradient-to-r lg:from-[#050505]/20 lg:to-[#050505]" />
         
         <div className="relative z-10 flex flex-col items-center justify-center w-full lg:flex-row lg:justify-between lg:items-start lg:w-auto">
-          <div className="flex flex-col items-center justify-start p-2 select-none group">
+          <div 
+            onClick={() => setView('adminLogin')}
+            className="flex flex-col items-center justify-start p-2 select-none group cursor-pointer"
+          >
             <img 
-              src="https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download" 
-              alt="Andrea Nails Studio" 
-              className="block w-64 lg:w-[480px] h-auto [filter:drop-shadow(0_0_20px_rgba(255,255,255,0.2))] mix-blend-screen brightness-115 contrast-110 transition-transform duration-700 hover:scale-105"
+              src="/icon.png" 
+              alt="Lumaira Nails Studio" 
+              className="block w-64 lg:w-[480px] h-auto [filter:drop-shadow(0_0_20px_rgba(255,255,255,0.2))] mix-blend-screen brightness-115 contrast-110 transition-transform duration-700 group-hover:scale-105"
               loading="eager"
               referrerPolicy="no-referrer"
             />
@@ -631,7 +645,7 @@ export default function App() {
             </a>
           </div>
           <p className="text-[10px] uppercase tracking-[0.2em] opacity-50">
-            © {new Date().getFullYear()} Andrea Nails Studio
+            © {new Date().getFullYear()} Lumaira Nails Studio
           </p>
         </div>
       </div>
