@@ -17,7 +17,7 @@ import {
   startOfDay
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Facebook, Instagram, Smartphone, CreditCard } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Facebook, Instagram, Smartphone, CreditCard, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -633,8 +633,28 @@ export default function App() {
           </AnimatePresence>
         </div>
 
+        {/* Location Section */}
+        <div className="border-t border-white/10 px-6 py-12 lg:px-16 flex flex-col items-center text-center">
+          <div className="w-12 h-12 border border-white/20 rounded-full flex items-center justify-center mb-6 bg-white/5">
+            <MapPin size={20} className="opacity-70" />
+          </div>
+          <h3 className="font-display text-2xl uppercase tracking-widest mb-2">Nuestro Estudio</h3>
+          <p className="text-sm opacity-60 mb-8 max-w-sm mx-auto leading-relaxed">
+            7 Rúa da Soidade<br/>
+            Lugo, Galicia
+          </p>
+          <a 
+            href="https://www.google.com/maps/search/?api=1&query=7+Rúa+da+Soidade,+Lugo,+Galicia" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 border border-white/30 px-8 py-4 text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all"
+          >
+            Ver en Google Maps
+          </a>
+        </div>
+
         {/* Footer / Socials */}
-        <div className="mt-auto px-6 py-10 lg:px-16 lg:pb-12 flex flex-col items-center justify-center gap-6 opacity-60">
+        <div className="px-6 py-10 lg:px-16 lg:pb-12 flex flex-col items-center justify-center gap-6 opacity-60">
           <div className="w-8 h-[1px] bg-white/20"></div>
           <div className="flex items-center gap-6">
             <a href="#" className="hover:text-white transition-colors duration-300 hover:scale-110 transform" aria-label="Instagram">

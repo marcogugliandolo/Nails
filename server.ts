@@ -29,7 +29,7 @@ async function startServer() {
     }
 
     // Check if slot is taken
-    const exists = bookings.find(b => b.date === date && b.time === time);
+    const exists = bookings.find(b => b.date === date && b.time === time && b.status !== 'rejected');
     if (exists) {
       return res.status(400).json({ error: 'La cita ya no está disponible' });
     }
@@ -42,7 +42,7 @@ async function startServer() {
       time, 
       service, 
       paidInAdvance: !!paidInAdvance, 
-      status: 'confirmed' 
+      status: 'pending' 
     };
     bookings.push(booking);
 
@@ -53,14 +53,14 @@ async function startServer() {
     if (process.env.RESEND_API_KEY) {
       try {
         await resend.emails.send({
-          from: 'Andrea Nails Studio <onboarding@resend.dev>', // Importante: Verifica tu dominio en Resend para usar un email personalizado
+          from: 'Lumaira Nails Studio <onboarding@resend.dev>', // Importante: Verifica tu dominio en Resend para usar un email personalizado
           to: email,
-          subject: 'Confirmación de Reserva | Andrea Nails Studio',
+          subject: 'Confirmación de Reserva | Lumaira Nails Studio',
           html: `
             <div style="font-family: 'Inter', system-ui, sans-serif; max-width: 600px; margin: 0 auto; background-color: #050505; color: #ffffff; padding: 40px; border-radius: 4px; border: 1px solid #222;">
               
               <div style="text-align: center; margin-bottom: 40px;">
-                <img src="https://nube.marcogugliandolo.com/s/FZWwcYLoqfJerq5/download" alt="Andrea Nails Studio" style="width: 150px; height: auto;" />
+                <img src="https://ais-dev-vj3nkapixkqp6pii34qpuq-385930783825.europe-west2.run.app/icon.png" alt="Lumaira Nails Studio" style="width: 150px; height: auto;" />
               </div>
 
               <h1 style="color: #ffffff; font-size: 24px; font-weight: 300; letter-spacing: -0.5px; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #222; padding-bottom: 20px;">
@@ -69,7 +69,7 @@ async function startServer() {
               
               <p style="color: #a0a0a0; font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
                 Hola <strong>${name}</strong>,<br/>
-                Tu cita ha sido reservada y confirmada con éxito. Aquí tienes los detalles:
+                Tu cita ha sido recibida y está pendiente de confirmación. Aquí tienes los detalles:
               </p>
 
               <div style="background-color: #0a0a0a; padding: 25px; border-left: 2px solid #ffffff; margin-bottom: 30px;">
@@ -93,7 +93,7 @@ async function startServer() {
 
               <p style="color: #666; font-size: 12px; line-height: 1.5; text-align: center; border-top: 1px solid #222; padding-top: 20px;">
                 <span style="display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.5;">Ubicación</span>
-                Andrea Nails Studio<br/>
+                Lumaira Nails Studio<br/>
                 Si necesitas cancelar o modificar tu cita, por favor contáctanos con 24h de antelación.
               </p>
             </div>
@@ -107,6 +107,22 @@ async function startServer() {
       console.log('No ENV RESEND_API_KEY. Simulating email send to:', email);
     }
 
+    res.json({ success: true, booking });
+  });
+
+  app.patch('/api/bookings/:id', (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const booking = bookings.find(b => b.id === id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+
+    if (status && ['pending', 'confirmed', 'rejected'].includes(status)) {
+      booking.status = status;
+    }
+    
     res.json({ success: true, booking });
   });
 

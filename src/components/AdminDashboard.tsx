@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LogOut, Calendar, Clock, User, CreditCard } from 'lucide-react';
+import { LogOut, Calendar, Clock, User, CreditCard, Check, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion } from 'framer-motion';
@@ -23,7 +23,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchBookings = () => {
+    setIsLoading(true);
     fetch('/api/bookings')
       .then(res => res.json())
       .then(data => {
@@ -37,7 +38,31 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       })
       .catch(err => console.error(err))
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    fetchBookings();
   }, []);
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        fetchBookings();
+      } else {
+        console.error('Failed to update booking status');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <motion.div
@@ -112,6 +137,34 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <p className={`text-xs uppercase tracking-widest ${booking.paidInAdvance ? 'text-green-400' : 'text-white/50'}`}>
                       {booking.paidInAdvance ? 'Adelanto Pagado (Bizum)' : 'Pago Pendiente en Estudio'}
                     </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-4">
+                    <div className={`px-3 py-1 rounded text-[10px] uppercase tracking-widest border
+                      ${booking.status === 'confirmed' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 
+                        booking.status === 'rejected' ? 'bg-red-500/10 border-red-500/30 text-red-400' : 
+                        'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'}`}>
+                      {booking.status === 'confirmed' ? 'Aceptada' : booking.status === 'rejected' ? 'Rechazada' : 'Pendiente'}
+                    </div>
+
+                    <div className="flex gap-2">
+                      {booking.status !== 'confirmed' && (
+                        <button 
+                          onClick={() => handleStatusChange(booking.id, 'confirmed')}
+                          className="flex items-center gap-1 bg-white text-black px-3 py-1.5 text-xs font-semibold uppercase tracking-widest hover:bg-gray-200 transition-colors"
+                        >
+                          <Check size={14} /> Aceptar
+                        </button>
+                      )}
+                      {booking.status !== 'rejected' && (
+                        <button 
+                          onClick={() => handleStatusChange(booking.id, 'rejected')}
+                          className="flex items-center gap-1 border border-white/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest hover:bg-white/10 transition-colors"
+                        >
+                          <X size={14} /> Rechazar
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

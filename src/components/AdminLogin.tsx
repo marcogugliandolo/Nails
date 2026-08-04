@@ -14,7 +14,7 @@ export function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.toLowerCase() === 'andrea' && password === 'nails2026') {
+    if (username.toLowerCase() === 'andrea' && password === 'lumaira2026') {
       onLogin();
     } else {
       setError('Credenciales incorrectas');
