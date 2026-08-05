@@ -18,6 +18,7 @@ function initDB() {
   }
 
   const db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS store (
