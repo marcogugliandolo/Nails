@@ -20,7 +20,10 @@ function initDB() {
   let db;
   const init = () => {
     db = new Database(DB_PATH);
-    // Remove WAL mode as it can cause "disk image is malformed" errors on certain Docker volume mounts
+    
+    // Configuración segura para volúmenes de Docker
+    db.pragma('journal_mode = DELETE');
+    db.pragma('synchronous = NORMAL');
     
     db.exec(`
       CREATE TABLE IF NOT EXISTS store (
@@ -33,7 +36,13 @@ function initDB() {
   try {
     init();
   } catch (error) {
-    console.error('Error opening database, possibly corrupted. Recreating...', error);
+    console.error('Error opening database, possibly corrupted. Recreating...', error.message);
+    
+    // Cerrar la conexión si se quedó abierta
+    if (db && db.open) {
+      try { db.close(); } catch (e) {}
+    }
+    
     try { if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH); } catch (e) {}
     try { if (fs.existsSync(DB_PATH + '-wal')) fs.unlinkSync(DB_PATH + '-wal'); } catch (e) {}
     try { if (fs.existsSync(DB_PATH + '-shm')) fs.unlinkSync(DB_PATH + '-shm'); } catch (e) {}
