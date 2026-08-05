@@ -17,8 +17,18 @@ function initDB() {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const db = new Database(DB_PATH);
-  db.pragma('journal_mode = WAL');
+  let db;
+  try {
+    db = new Database(DB_PATH);
+    db.pragma('journal_mode = WAL');
+  } catch (error) {
+    console.error('Error opening database, possibly corrupted. Recreating...', error);
+    if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);
+    if (fs.existsSync(DB_PATH + '-wal')) fs.unlinkSync(DB_PATH + '-wal');
+    if (fs.existsSync(DB_PATH + '-shm')) fs.unlinkSync(DB_PATH + '-shm');
+    db = new Database(DB_PATH);
+    db.pragma('journal_mode = WAL');
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS store (
