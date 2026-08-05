@@ -740,6 +740,14 @@ export default function App() {
           <p className="text-[10px] uppercase tracking-[0.2em] opacity-50">
             © {new Date().getFullYear()} Lumaira Nails Studio
           </p>
+          <a 
+            href="https://marcogugliandolo.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs text-white/40 hover:text-white/80 transition-colors duration-300 mt-2"
+          >
+            Creado por Marco Gugliandolo
+          </a>
         </div>
       </div>
     </div>
