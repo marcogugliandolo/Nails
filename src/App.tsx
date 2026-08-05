@@ -744,7 +744,7 @@ export default function App() {
             href="https://marcogugliandolo.com" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-xs text-white/40 hover:text-white/80 transition-colors duration-300 mt-2"
+            className="text-sm text-white/60 hover:text-white transition-colors duration-300 mt-4"
           >
             Creado por Marco Gugliandolo
           </a>
