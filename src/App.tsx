@@ -54,6 +54,10 @@ export default function App() {
   const [paymentMethod, setPaymentMethod] = useState<'studio' | 'bizum'>('studio');
   
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [services, setServices] = useState<any[]>(SERVICES);
+  const [products, setProducts] = useState<any[]>([]);
+  const [blockedSlots, setBlockedSlots] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'servicios' | 'tienda'>('servicios');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -61,47 +65,67 @@ export default function App() {
   const upcomingDays = Array.from({ length: 14 }).map((_, i) => addDays(startOfToday(), i));
 
   useEffect(() => {
-    fetchBookings().finally(() => {
-      // Simulate a brief elegant loading delay for the initial load
-      setTimeout(() => setIsAppLoading(false), 1500);
-    });
-  }, []);
+    if (view === 'booking') {
+      fetchInitialData().finally(() => {
+        setTimeout(() => setIsAppLoading(false), 1500);
+      });
+    }
+  }, [view]);
 
-  const fetchBookings = async () => {
+  const fetchInitialData = async () => {
     try {
-      const res = await fetch('/api/bookings');
-      if (res.ok) {
-        const data = await res.json();
-        setBookings(data);
-      }
+      const [bRes, sRes, pRes, blRes] = await Promise.all([
+        fetch('/api/bookings', { cache: 'no-store' }),
+        fetch('/api/services', { cache: 'no-store' }),
+        fetch('/api/products', { cache: 'no-store' }),
+        fetch('/api/blocked-slots', { cache: 'no-store' })
+      ]);
+      if (bRes.ok) setBookings(await bRes.json());
+      if (sRes.ok) setServices(await sRes.json());
+      if (pRes.ok) setProducts(await pRes.json());
+      if (blRes.ok) setBlockedSlots(await blRes.json());
     } catch (e) {
-      console.error('Error fetching bookings:', e);
+      console.error('Error fetching initial data:', e);
     }
   };
 
   const bookedSlotsForDate = bookings
-    .filter(b => b.date === format(selectedDate, 'yyyy-MM-dd'))
+    .filter(b => b.date === format(selectedDate, 'yyyy-MM-dd') && b.status !== 'rejected')
     .map(b => b.time);
 
+  const isSlotBlocked = (dateStr: string, time: string) => {
+    return blockedSlots.some(b => b.date === dateStr && (b.time === 'all' || b.time === time));
+  };
+
   const isDayFullyBooked = (date: Date) => {
-    const bookedForDay = bookings.filter(b => b.date === format(date, 'yyyy-MM-dd')).length;
-    return bookedForDay >= TIME_SLOTS.length;
+    const dateStr = format(date, 'yyyy-MM-dd');
+    if (blockedSlots.some(b => b.date === dateStr && b.time === 'all')) return true;
+    
+    let unavailableCount = 0;
+    TIME_SLOTS.forEach(time => {
+      if (bookedSlotsForDate.includes(time) || isSlotBlocked(dateStr, time)) {
+        unavailableCount++;
+      }
+    });
+    return unavailableCount >= TIME_SLOTS.length;
   };
 
   const handleBookingDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedService || !selectedDate || !selectedTime || !formData.name || !formData.email) return;
+    const isProduct = products.some(p => p.id === selectedService);
+    if (!selectedService || !formData.name || !formData.email) return;
+    if (!isProduct && (!selectedDate || !selectedTime)) return;
 
     setIsSubmitting(true);
-    const serviceName = SERVICES.find(s => s.id === selectedService)?.name || selectedService;
+    const serviceName = currentItemObj?.name || selectedService;
 
     try {
       const payload = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        time: selectedTime,
+        date: isProduct ? 'N/A' : format(selectedDate, 'yyyy-MM-dd'),
+        time: isProduct ? 'N/A' : selectedTime,
         service: serviceName,
         paidInAdvance: paymentMethod === 'bizum'
       };
@@ -113,7 +137,7 @@ export default function App() {
       });
 
       if (res.ok) {
-        fetchBookings();
+        fetchInitialData();
         handleStepTransition(() => setStep(4));
       } else {
         const errorData = await res.json();
@@ -128,8 +152,9 @@ export default function App() {
   };
 
   // Determine imagery for left pane
-  const currentServiceObj = SERVICES.find(s => s.id === selectedService);
-  const heroImage = currentServiceObj?.img || SERVICES.find(s => s.id === 'nailart')?.img || '';
+  const currentItemObj = services.find(s => s.id === selectedService) || products.find(p => p.id === selectedService);
+  const heroImage = currentItemObj?.img || services.find(s => s.id === 'nailart')?.img || '';
+  const isProduct = products.some(p => p.id === selectedService);
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
@@ -268,7 +293,7 @@ export default function App() {
         <div className="sticky top-0 z-20 bg-[#050505]/80 backdrop-blur-xl px-6 lg:px-16 lg:pt-16 py-6 flex items-center min-h-[80px]">
           {step > 1 && step < 4 && (
             <button 
-              onClick={() => handleStepTransition(() => setStep(step - 1))}
+              onClick={() => handleStepTransition(() => setStep((isProduct && step === 3) ? 1 : step - 1))}
               className="flex items-center gap-2 text-sm uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
             >
               <ArrowLeft size={16} /> Volver
@@ -282,7 +307,7 @@ export default function App() {
         <div className="px-6 lg:px-16 pb-24 lg:pb-32 flex-grow flex flex-col justify-center">
           <AnimatePresence mode="wait">
             
-            {/* STEP 1: SERVICES */}
+            {/* STEP 1: SERVICES OR SHOP */}
             {step === 1 && (
               <motion.div 
                 key="step1"
@@ -291,41 +316,86 @@ export default function App() {
                 exit={{ opacity: 0, y: -20 }}
                 className="w-full max-w-xl mx-auto lg:mx-0"
               >
-                <h2 className="font-display text-4xl lg:text-5xl uppercase tracking-tighter mb-10 lg:hidden">
-                  Elige tu servicio.
-                </h2>
-                <div className="grid grid-cols-2 gap-4">
-                  {SERVICES.map((service) => (
-                    <button
-                      key={service.id}
-                      onClick={() => handleStepTransition(() => {
-                        setSelectedService(service.id);
-                        setStep(2);
-                      })}
-                      className="group relative aspect-[3/4] overflow-hidden bg-[#050505] border border-white/10 hover:border-white/40 transition-all duration-500 clip-image text-left"
-                    >
-                      {/* High contrast, stark grayscale filters for true minimalist B&W moody aesthetic */}
-                      <img 
-                        src={service.img} 
-                        referrerPolicy="no-referrer" 
-                        className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-60 group-hover:opacity-100 transition-opacity duration-700 grayscale-[100%] saturate-0 contrast-125" 
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
-                      <div className="absolute bottom-0 left-0 p-5 w-full">
-                        <h3 className="font-display text-xl lg:text-2xl uppercase tracking-tight mb-3">{service.name}</h3>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-display text-lg lg:text-xl bg-white text-black px-2 py-1 leading-none">
-                            {service.price}
-                          </span>
-                          <span className="text-[10px] tracking-[0.2em] uppercase border border-white/20 px-2 py-1.5 leading-none opacity-80">
-                            {service.duration}
-                          </span>
-                        </div>
-                        <span className="text-[9px] uppercase tracking-widest opacity-50 block">Requiere 10€ de señal</span>
-                      </div>
-                    </button>
-                  ))}
+                <div className="flex gap-4 mb-10 border-b border-white/10 pb-4">
+                  <button 
+                    onClick={() => setActiveTab('servicios')}
+                    className={`font-display text-2xl lg:text-3xl uppercase tracking-tighter transition-opacity ${activeTab === 'servicios' ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+                  >
+                    Servicios
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('tienda')}
+                    className={`font-display text-2xl lg:text-3xl uppercase tracking-tighter transition-opacity ${activeTab === 'tienda' ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+                  >
+                    Tienda
+                  </button>
                 </div>
+
+                {activeTab === 'servicios' ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {services.map((service) => (
+                      <button
+                        key={service.id}
+                        onClick={() => handleStepTransition(() => {
+                          setSelectedService(service.id);
+                          setStep(2);
+                        })}
+                        className="group relative aspect-[3/4] overflow-hidden bg-[#050505] border border-white/10 hover:border-white/40 transition-all duration-500 clip-image text-left"
+                      >
+                        <img 
+                          src={service.img} 
+                          referrerPolicy="no-referrer" 
+                          className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-60 group-hover:opacity-100 transition-opacity duration-700 grayscale-[100%] saturate-0 contrast-125" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
+                        <div className="absolute bottom-0 left-0 p-5 w-full">
+                          <h3 className="font-display text-xl lg:text-2xl uppercase tracking-tight mb-3">{service.name}</h3>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-display text-lg lg:text-xl bg-white text-black px-2 py-1 leading-none">
+                              {service.price}
+                            </span>
+                            <span className="text-[10px] tracking-[0.2em] uppercase border border-white/20 px-2 py-1.5 leading-none opacity-80">
+                              {service.duration}
+                            </span>
+                          </div>
+                          <span className="text-[9px] uppercase tracking-widest opacity-50 block">Requiere 10€ de señal</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {products.map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => handleStepTransition(() => {
+                          setSelectedService(product.id);
+                          setStep(3);
+                        })}
+                        className="group relative aspect-square overflow-hidden bg-[#050505] border border-white/10 hover:border-white/40 transition-all duration-500 text-left flex flex-col"
+                      >
+                        <div className="relative flex-grow w-full overflow-hidden">
+                          <img 
+                            src={product.img} 
+                            referrerPolicy="no-referrer" 
+                            className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 grayscale-[100%] contrast-125" 
+                          />
+                        </div>
+                        <div className="p-4 border-t border-white/10 flex flex-col gap-1 justify-end relative z-10 bg-[#050505] w-full">
+                          <h3 className="font-display text-sm lg:text-base uppercase tracking-tight line-clamp-1">{product.name}</h3>
+                          <div className="flex justify-between items-center mt-2">
+                            <span className="font-display text-base bg-white text-black px-2 py-1 leading-none">
+                              {product.price}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
+                              Comprar
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -338,15 +408,15 @@ export default function App() {
                 exit={{ opacity: 0, x: -20 }}
                 className="w-full max-w-xl mx-auto lg:mx-0"
               >
-                {currentServiceObj && (
+                {currentItemObj && (
                   <div className="mb-10 p-4 border border-white/10 bg-white/5 flex justify-between items-center">
                     <div>
                       <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 block mb-1">Servicio Seleccionado</span>
-                      <h3 className="font-display text-xl uppercase">{currentServiceObj.name}</h3>
+                      <h3 className="font-display text-xl uppercase">{currentItemObj.name}</h3>
                     </div>
                     <div className="text-right">
-                      <span className="font-display text-xl block">{currentServiceObj.price}</span>
-                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50">{currentServiceObj.duration}</span>
+                      <span className="font-display text-xl block">{currentItemObj.price}</span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50">{currentItemObj.duration}</span>
                     </div>
                   </div>
                 )}
@@ -438,7 +508,8 @@ export default function App() {
                   
                   <div className="grid grid-cols-3 gap-3">
                     {TIME_SLOTS.map((time) => {
-                      const isBooked = bookedSlotsForDate.includes(time);
+                      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                      const isBooked = bookedSlotsForDate.includes(time) || isSlotBlocked(dateStr, time);
                       const isSelected = selectedTime === time;
 
                       return (
@@ -489,22 +560,24 @@ export default function App() {
                 className="w-full max-w-xl mx-auto lg:mx-0"
               >
                 <div className="mb-12 p-6 border border-white/10 bg-[#0a0a0a]">
-                  <div className="flex justify-between items-start mb-4 border-b border-white/10 pb-4">
+                  <div className={`flex justify-between items-start ${!isProduct ? 'mb-4 border-b border-white/10 pb-4' : ''}`}>
                     <div>
-                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 block mb-1">Servicio</span>
-                      <h3 className="font-display text-xl uppercase">{currentServiceObj?.name}</h3>
+                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 block mb-1">{isProduct ? 'Producto' : 'Servicio'}</span>
+                      <h3 className="font-display text-xl uppercase">{currentItemObj?.name}</h3>
                     </div>
                     <div className="text-right">
-                      <span className="font-display text-xl block">{currentServiceObj?.price}</span>
-                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50">{currentServiceObj?.duration}</span>
+                      <span className="font-display text-xl block">{currentItemObj?.price}</span>
+                      {!isProduct && <span className="text-[10px] uppercase tracking-[0.2em] opacity-50">{currentItemObj?.duration}</span>}
                     </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 block mb-1">Fecha y Hora</span>
-                    <p className="font-display text-lg uppercase">
-                      {format(selectedDate, 'dd MMM yyyy', { locale: es })} — {selectedTime}
-                    </p>
-                  </div>
+                  {!isProduct && (
+                    <div>
+                      <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 block mb-1">Fecha y Hora</span>
+                      <p className="font-display text-lg uppercase">
+                        {format(selectedDate, 'dd MMM yyyy', { locale: es })} — {selectedTime}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <form id="booking-form" onSubmit={handleBookingDetailsSubmit} className="space-y-10">
@@ -569,7 +642,7 @@ export default function App() {
                         }`}
                       >
                         <span className="font-display block mb-1">Pago adelantado Bizum</span>
-                        <span className="text-[10px] uppercase tracking-widest opacity-70">Abonar {currentServiceObj?.price} ahora</span>
+                        <span className="text-[10px] uppercase tracking-widest opacity-70">Abonar {currentItemObj?.price} ahora</span>
                       </button>
                     </div>
                   </div>
@@ -583,7 +656,7 @@ export default function App() {
                         className="overflow-hidden"
                       >
                         <div className="border border-white/20 bg-[#0a0a0a] p-6 text-center mt-4">
-                          <span className="block text-[10px] uppercase tracking-[0.2em] opacity-60 mb-2">Envía un Bizum de {currentServiceObj?.price} a:</span>
+                          <span className="block text-[10px] uppercase tracking-[0.2em] opacity-60 mb-2">Envía un Bizum de {currentItemObj?.price} a:</span>
                           <span className="font-display text-2xl tracking-widest block text-white py-2 px-4 border border-white/10 inline-block mx-auto mb-4 bg-black/50">+34 600 000 000</span>
                           <p className="text-xs opacity-50 font-mono">Concepto: {formData.name ? formData.name.split(' ')[0] : 'Reserva'}</p>
                         </div>
